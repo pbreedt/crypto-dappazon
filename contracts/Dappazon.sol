@@ -15,6 +15,7 @@ contract Dappazon {
     mapping(address => mapping(uint256 => Order)) public orders;
     
     event List(string name, uint256 cost, uint256 stock);
+    event Buy(address buyer, uint256 orderId, uint256 itemId);
 
     struct Item {
         uint256 id;
@@ -53,20 +54,30 @@ contract Dappazon {
         Item memory item = Item(_id, _name, _category, _image, _cost, _rating, _stock);
         items[_id] = item;
 
-        // emit List(_name, _cost, _stock);
+        emit List(_name, _cost, _stock);
     }
 
     // Buy product
     // Simply making it 'payable' allows us to do '.buy(ID, { value: COST } )' and send crypto to contract
     function buy(uint256 _id) public payable {
         Item memory item = items[_id];
+
+        require(msg.value >= item.cost);
+
+        require(item.stock > 0);
+
         Order memory order = Order(block.timestamp, item);
         orderCount[msg.sender]++;
         orders[msg.sender][orderCount[msg.sender]] = order;
 
         items[_id].stock--;
+
+        emit Buy(msg.sender, orderCount[msg.sender], item.id);
     }
     
     // Withdraw funds
-
+    function withdraw() public mustBeOwner() {
+        (bool success,) = owner.call{value: address(this).balance}("");
+        require(success);
+    }
 }

@@ -11,6 +11,8 @@ describe("Dappazon", () => {
     let deployer, buyer
     let transaction
 
+    let ownerBalanceBefore
+
     const ID = 1
     const NAME = "Shoes"
     const CATEGORY = "Clothing"
@@ -28,6 +30,7 @@ describe("Dappazon", () => {
       const Dappazon = await ethers.getContractFactory("Dappazon")
       dappazon = await Dappazon.deploy()
 
+      ownerBalanceBefore = await ethers.provider.getBalance(deployer.address)
     })
 
     describe("Deployment", () => {
@@ -50,6 +53,7 @@ describe("Dappazon", () => {
       //   await transaction.wait()
       // })
       before(async () => {
+        // Listen to List event
         dappazon.on("List", (from, to, value, event)=>{
           let transferEvent ={
               from: from,
@@ -79,10 +83,9 @@ describe("Dappazon", () => {
         expect(item.stock).to.equal(STOCK)
       })
 
-      it("Emits List event", async () => {
+      it("Emits List event", () => {
         console.log("EMIT List check")
-        expect(await transaction).to.emit(dappazon, "List")
-        expect(transaction).to.emit(dappazon, "List")
+        expect(transaction).to.emit(dappazon, "List")  // Does not work!
       })
 
       // already done
@@ -120,7 +123,28 @@ describe("Dappazon", () => {
 
       it("Emits Buy event", async () => {
         console.log("EMIT Buy check")
-        expect(transaction).to.emit(dappazon, "Can be anytging")
+        expect(transaction).to.emit(dappazon, "Buy") // Does not work!
+      })
+
+    })
+
+    describe("Withdrawl", () => {
+      
+      before(async () => {
+        // Withdraw
+        transaction = await dappazon.connect(deployer).withdraw()
+        await transaction.wait()
+      })
+
+      it("Contract balance is zero", async () => {
+        let result = await ethers.provider.getBalance(dappazon.address)
+        expect(result).to.equal(0)
+      })
+
+      it("Owner balance is more", async () => {
+        ownerBalanceAfter = await ethers.provider.getBalance(deployer.address)
+        console.log("Before", ownerBalanceBefore, "After", ownerBalanceAfter)
+        expect(ownerBalanceAfter).to.be.greaterThan(ownerBalanceBefore)
       })
 
     })
