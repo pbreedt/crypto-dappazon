@@ -17,7 +17,8 @@ async function main() {
   console.log("deployer", deployer.address)
   console.log("buyer", buyer.address)
 
-  const Dappazon = await ethers.getContractFactory("Dappazon")
+  // using hre.ethers here!! not sure why only here? (still worked when using ethers insted of hre.ethers)
+  const Dappazon = await hre.ethers.getContractFactory("Dappazon")
   const dappazon = await Dappazon.deploy()
   await dappazon.deployed()
   console.log("Deployed contract to", dappazon.address)
